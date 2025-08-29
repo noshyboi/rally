@@ -1,0 +1,308 @@
+local screenUI = script.Parent
+local templates = script.Parent.Parent:WaitForChild("Templates")
+local teamTemplate = templates:WaitForChild("Team")
+local userTemplate = templates:WaitForChild("User")
+local background = screenUI:WaitForChild("Frame"):WaitForChild("Background")
+local settings = background:WaitForChild("Menu1")
+local settingsTop = background:WaitForChild("About Menu1")
+local options = background:WaitForChild("Menu2")
+local optionsTop = background:WaitForChild("About Menu2")
+local Reserves = background:WaitForChild("ReservesMenu")
+local Squad = background:WaitForChild("SquadMenu")
+local membersTop = background:WaitForChild("About Menu3")
+local deploy = background:WaitForChild("Menu4")
+local deployTop = background:WaitForChild("About Menu4")
+local TeamTracker = game:GetService("ReplicatedStorage"):WaitForChild("TeamOpen")
+
+
+local deleteRally = options:WaitForChild("DeleteRally")
+local manageMembers = options:WaitForChild("ManageMembers")
+local deployButton = options:WaitForChild("Deploy")
+
+local deployGame = deploy:WaitForChild("DeployButton")
+local deployWithTeamButton = deploy:WaitForChild("Deploy"):WaitForChild("Frame")
+local deployID = deploy:WaitForChild("Place ID")
+
+local UIS = game:GetService("UserInputService")
+local Team = game:GetService("Teams")
+local TS = game:GetService("TeleportService")
+local RS = game:GetService("ReplicatedStorage")
+
+local remotes = RS:WaitForChild("DeployRemotes")
+
+local addPlayer = remotes:WaitForChild("AddPlayer")
+local createTeam = remotes:WaitForChild("CreateTeam")
+local destroyTeam = remotes:WaitForChild("DestroyTeam")
+local removePlayer = remotes:WaitForChild("RemovePlayer")
+local deployPlayers = remotes:WaitForChild("DeployPlayers")
+
+local neutral = Team:WaitForChild("Lionians")
+
+local teamSelected
+local playerSelected
+local deployWithTeam = false
+
+
+local teamsTable = {
+	[1] = {
+		["NAME"] = "ALPHA";
+		["COLOR"] = BrickColor.new("Really red")
+	};
+	[2] = {
+		["NAME"] = "BRAVO";
+		["COLOR"] = BrickColor.new("Really blue")
+	};
+	[3] = {
+		["NAME"] = "CHARLIE";
+		["COLOR"] = BrickColor.new("Bright yellow")
+	};
+	[4] = {
+		["NAME"] = "DELTA";
+		["COLOR"] = BrickColor.new("Black")
+	};
+	[5] = {
+		["NAME"] = "ECHO";
+		["COLOR"] = BrickColor.new("Bright green")
+	};
+	[6] = {
+		["NAME"] = "FOXTROT";
+		["COLOR"] = BrickColor.new("Bright orange")
+	};
+	[7] = {
+		["NAME"] = "GOLF";
+		["COLOR"] = BrickColor.new("Bright violet")
+	};
+	[8] = {
+		["NAME"] = "HOTEL";
+		["COLOR"] = BrickColor.new("Bright purple")
+	};
+	[9] = {
+		["NAME"] = "INDIA";
+		["COLOR"] = BrickColor.new("Bright bluish green")
+	};
+	[10] = {
+		["NAME"] = "JULIETT";
+		["COLOR"] = BrickColor.new("Bright bluish violet")
+	};
+	[11] = {
+		["NAME"] = "MIKE";
+		["COLOR"] = BrickColor.new("Bright reddish lilac")
+	};
+	[12] = {
+		["NAME"] = "NOVEMBER";
+		["COLOR"] = BrickColor.new("Bright reddish violet")
+	};
+	[13] = {
+		["NAME"] = "OSCAR";
+		["COLOR"] = BrickColor.new("Tr. Bright bluish violet")
+	};
+	[14] = {
+		["NAME"] = "PAPA";
+		["COLOR"] = BrickColor.new("Dark blue")
+	};
+}
+
+UIS.InputBegan:Connect(function(input, GPE)
+	if not GPE then
+		if input.KeyCode == Enum.KeyCode.M  and game.Players.LocalPlayer:GetRankInGroup(33403479) >= 0 then
+			background.Parent.Visible = not background.Parent.Visible
+		end
+	end
+end)
+
+function createUserTemplate(player)
+	local newUserTemplate = userTemplate:Clone()
+	newUserTemplate.Name = player.Name
+	newUserTemplate.Frame.BackgroundColor3 = player.TeamColor.Color
+	newUserTemplate.PlrName.Text = player.Name	
+	newUserTemplate.Parent = Reserves
+	
+	
+	
+	
+	newUserTemplate.MouseButton1Up:Connect(function()
+
+    playerSelected = player
+
+	if newUserTemplate.Parent == Squad then
+		
+			if playerSelected.Team.Name == TeamTracker.Value then
+				removePlayer:FireServer(playerSelected)
+				playerSelected = nil
+				print("test")
+			end
+	end
+	
+	if newUserTemplate.Parent == Reserves then
+			local Name = playerSelected
+
+			if playerSelected.Team:GetAttribute("DeployTeam") then 
+				playerSelected = nil
+			end 
+
+			addPlayer:FireServer(playerSelected,teamSelected)
+			playerSelected = nil
+		
+	  end
+   end)
+	
+end
+
+Team.ChildAdded:Connect(function(newTeam)
+	if newTeam:GetAttribute("DeployTeam") then
+		local name = newTeam.Name
+		local color = newTeam.TeamColor
+		
+		local newTeamTemplate = teamTemplate:Clone()
+		newTeamTemplate.Name = name
+		newTeamTemplate.Frame.BackgroundColor3 = color.Color
+		newTeamTemplate.Team.Text = name
+		newTeamTemplate.Number.Text = 0
+		
+
+		newTeamTemplate.MouseButton1Up:Connect(function()
+			options.Visible = not options.Visible
+			optionsTop.Visible = not optionsTop.Visible
+
+			Reserves.Visible = false
+			Squad.Visible = false
+			membersTop.Visible = false
+			deploy.Visible = false
+			deployTop.Visible = false
+
+			teamSelected = newTeam
+			TeamTracker.Value = teamSelected.Name
+
+		end)
+
+		newTeam.PlayerAdded:Connect(function(plr)
+			Reserves[plr.Name].Parent = Squad
+			Squad[plr.Name]:WaitForChild("Frame").BackgroundColor3 = color.Color
+			newTeamTemplate.Number.Text = #newTeam:GetPlayers()
+		end)
+
+		newTeam.PlayerRemoved:Connect(function(plr)
+			Squad[plr.Name].Parent = Reserves
+			Reserves[plr.Name]:WaitForChild("Frame").BackgroundColor3 = plr.TeamColor.Color
+			newTeamTemplate.Number.Text = #newTeam:GetPlayers()
+		end)
+
+		newTeamTemplate.Parent = settings
+	end
+end)
+
+Team.ChildRemoved:Connect(function(v)
+	if settings:FindFirstChild(v.Name) then
+		settings:FindFirstChild(v.Name):Destroy()
+	end
+end)
+
+for i,v in pairs(game.Players:GetPlayers()) do
+	createUserTemplate(v)
+end
+
+for i,newTeam in pairs(Team:GetChildren()) do
+	if newTeam:GetAttribute("DeployTeam") then
+		local name = newTeam.Name
+		local color = newTeam.TeamColor
+
+		local newTeamTemplate = teamTemplate:Clone()
+		newTeamTemplate.Name = name
+		newTeamTemplate.Frame.BackgroundColor3 = color.Color
+		newTeamTemplate.Team.Text = name
+		newTeamTemplate.Number.Text = 0
+		
+		
+		newTeamTemplate.MouseButton1Up:Connect(function()
+			options.Visible = not options.Visible
+			optionsTop.Visible = not optionsTop.Visible
+
+			Squad.Visible = false
+			Reserves.Visible = false
+			membersTop.Visible = false
+			deploy.Visible = false
+			deployTop.Visible = false
+
+			teamSelected = newTeam
+			TeamTracker.Value = teamSelected.Name
+
+		end)
+
+		newTeam.PlayerAdded:Connect(function(plr)
+			Reserves[plr.Name].Parent = Squad
+			Squad[plr.Name]:WaitForChild("Frame").BackgroundColor3 = color.Color
+			newTeamTemplate.Number.Text = #newTeam:GetPlayers()
+		end)
+
+		newTeam.PlayerRemoved:Connect(function(plr)
+			Squad[plr.Name].Parent = Reserves
+			Reserves[plr.Name]:WaitForChild("Frame").BackgroundColor3 = plr.TeamColor.Color
+			newTeamTemplate.Number.Text = #newTeam:GetPlayers()
+		end)
+
+		newTeamTemplate.Parent = settings
+	end
+end
+
+game.Players.PlayerAdded:Connect(function(v)
+	createUserTemplate(v)
+end)
+
+game.Players.PlayerRemoving:Connect(function(v)
+	if Squad[v.Name] or Reserves[v.Name] then
+		Squad[v.Name]:Destroy()
+		Reserves[v.Name]:Destroy()
+	end
+end)
+
+settingsTop:WaitForChild("+").MouseButton1Up:Connect(function()
+	for i = 1,14,1 do
+		if Team:FindFirstChild(teamsTable[i].NAME) == nil then
+			createTeam:FireServer(teamsTable[i].NAME, teamsTable[i].COLOR)
+			return
+		end
+	end
+end)
+
+deleteRally.MouseButton1Up:Connect(function()
+	
+	destroyTeam:FireServer(teamSelected)
+	
+	teamSelected = nil
+	
+	Squad.Visible = false
+	Reserves.Visible = false
+	membersTop.Visible = false
+	deploy.Visible = false
+	deployTop.Visible = false
+	options.Visible = false
+	optionsTop.Visible = false
+	
+end)
+
+manageMembers.MouseButton1Up:Connect(function()
+	Squad.Visible = not Squad.Visible
+	Reserves.Visible = not Reserves.Visible
+	membersTop.Visible = Reserves.Visible
+end)
+
+deployButton.MouseButton1Up:Connect(function()
+	deploy.Visible = not deploy.Visible
+	deployTop.Visible = deploy.Visible
+end)
+
+
+
+deployWithTeamButton.MouseButton1Up:Connect(function()
+	if deployWithTeam then
+		deployWithTeam = false
+		deployWithTeamButton.BackgroundColor3 = Color3.fromRGB(255,0,0)
+	else
+		deployWithTeam = true
+		deployWithTeamButton.BackgroundColor3 = Color3.fromRGB(85,255,127)
+	end
+end)
+
+deployGame.MouseButton1Up:Connect(function()
+	deployPlayers:FireServer(deployID.Text, teamSelected, deployWithTeam)
+end)
