@@ -1,0 +1,115 @@
+local RS = game:GetService("ReplicatedStorage")
+local teams = game:GetService("Teams")
+local TS = game:GetService("TeleportService")
+
+local groupid = 33403479
+local grouprank = 0
+
+local remotes = RS.DeployRemotes
+local addPlayer = remotes.AddPlayer
+local createTeam = remotes.CreateTeam
+local destroyTeam = remotes.DestroyTeam
+local deployPlayer = remotes.DeployPlayers
+local removePlayer = remotes.RemovePlayer
+
+local neutral = teams.Lionians
+
+createTeam.OnServerEvent:Connect(function(plr, name, color)
+	if plr:GetRankInGroup(groupid) >= grouprank then
+		local newTeam = Instance.new("Team")
+		newTeam.Name = name
+		newTeam.TeamColor = color
+		newTeam.AutoAssignable = false
+		newTeam:SetAttribute("DeployTeam", true)
+		newTeam.Parent = teams
+	end
+end)
+
+destroyTeam.OnServerEvent:Connect(function(plr, team)
+	if plr:GetRankInGroup(groupid) >= grouprank then
+		for i, plyr in pairs(team:GetPlayers()) do
+			local Group = 33403479
+			local GroupCheck = plyr:IsInGroup(Group)
+			local RankCheck = plyr:GetRankInGroup(Group)
+
+			if RankCheck == 254 then
+				plyr.TeamColor = BrickColor.new("Maroon")
+			elseif RankCheck >= 250 then
+				plyr.TeamColor = BrickColor.new("CGA brown")
+			elseif RankCheck >= 21 then
+				plyr.TeamColor = BrickColor.new("White")
+				if plyr:IsInGroup(33656733) then
+					plyr.TeamColor = BrickColor.new("Gold")
+				end
+				if plyr:IsInGroup(33011227) then
+					plyr.TeamColor = BrickColor.new("Bright blue")
+				end
+				if plyr:IsInGroup(34855317) then
+					plyr.TeamColor = BrickColor.new("Really black")
+				end
+			elseif RankCheck >= 1 then
+				plyr.TeamColor = BrickColor.new("Cocoa")
+			end
+		end
+		team:Destroy()
+	end
+end)
+
+addPlayer.OnServerEvent:Connect(function(plr, target, team)
+	if plr:GetRankInGroup(groupid) >= grouprank then
+		target.Team = team
+	end
+end)
+
+removePlayer.OnServerEvent:Connect(function(plr, plyr)
+	local Group = 33403479
+	local GroupCheck = plyr:IsInGroup(Group)
+	local RankCheck = plyr:GetRankInGroup(Group)
+
+	if RankCheck == 254 then
+		plyr.TeamColor = BrickColor.new("Maroon")
+	elseif RankCheck >= 250 then
+		plyr.TeamColor = BrickColor.new("CGA brown")
+	elseif RankCheck >= 21 then
+		plyr.TeamColor = BrickColor.new("White")
+		if plyr:IsInGroup(33656733) then
+			plyr.TeamColor = BrickColor.new("Gold")
+		end
+		if plyr:IsInGroup(33011227) then
+			plyr.TeamColor = BrickColor.new("Bright blue")
+		end
+		if plyr:IsInGroup(34855317) then
+			plyr.TeamColor = BrickColor.new("Really black")
+		end
+	else
+		plyr.TeamColor = BrickColor.new("Cocoa")
+	end
+end)
+
+local TeleportService = game:GetService("TeleportService")
+local groupId = 33403479
+local requiredRank = 0
+
+deployPlayer.OnServerEvent:Connect(function(plr, targetPlaceId, team, deployWithTeam)
+	if plr:GetRankInGroup(groupId) >= requiredRank then
+		local playersToTeleport = team:GetPlayers()
+
+		if deployWithTeam and not table.find(playersToTeleport, plr) then
+			table.insert(playersToTeleport, plr)
+		end
+
+		if #playersToTeleport > 0 then
+			local success, result = pcall(function()
+				return TeleportService:TeleportAsync(tonumber(targetPlaceId), playersToTeleport)
+			end)
+
+			if success then
+				print("Teleportation to place ID", targetPlaceId, "successful.")
+			else
+				warn("Teleport failed:", result)
+			end
+		end
+	end
+end)
+
+
